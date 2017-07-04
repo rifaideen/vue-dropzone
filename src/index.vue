@@ -68,13 +68,12 @@
                 default: (options) => {
                     return `
                         <div class="dz-preview dz-file-preview">
-                            <div class="dz-image" style="width: ${options.thumbnailWidth}px;height: ${options.thumbnailHeight}px">
-                                <img data-dz-thumbnail /></div>
+                            <div class="dz-image" style="width: ${options.thumbnailWidth}px;height: ${options.thumbnailHeight}px">                                
+                            <img data-dz-thumbnail /></div>
                             <div class="dz-details">
-                              <div class="dz-size"><span data-dz-size></span></div>
-                              <div class="dz-filename"><span data-dz-name></span></div>
+                                <div class="dz-size"><span data-dz-size></span></div>
+                                <div class="dz-filename"><span data-dz-name></span></div>
                             </div>
-
                             <div class="dz-progress"><span class="dz-upload" data-dz-uploadprogress></span></div>
                             <div class="dz-error-message"><span data-dz-errormessage></span></div>
                             <div class="dz-success-mark">${options.doneIcon}</div>
@@ -120,16 +119,25 @@
             duplicateCheck:{
                 type: Boolean,
                 default: false
-            }
+            },
+            parallelUploads:{
+                type : Number,
+                default : 2
+            },
         },
         methods: {
-            manuallyAddFile: function (file, fileUrl, callback, crossOrigin) {
+            manuallyAddFile: function (file, fileUrl, callback, crossOrigin, options) {
                 this.dropzone.emit("addedfile", file);
                 this.dropzone.emit("thumbnail", file, fileUrl);
                 this.dropzone.createThumbnailFromUrl(file, fileUrl, callback, crossOrigin);
-                this.dropzone.emit("complete", file);
+                this.dropzone.emit("complete", file);                
+                if ((typeof options.dontSubstractMaxFiles == 'undefined') || !options.dontSubstractMaxFiles) {
+                    this.dropzone.options['maxFiles'] = this.dropzone.options['maxFiles'] - 1;
+                }
+                if ((typeof options.addToFiles != 'undefined') && options.addToFiles) {
+                    this.dropzone.files.push(file);
+                }
                 this.$emit('vdropzone-file-added-manually', file);
-                this.dropzone.options['maxFiles'] = this.dropzone.options['maxFiles'] - 1;
             },
             setOption: function (option, value) {
                 this.dropzone.options[option] = value
@@ -260,7 +268,8 @@
                 resizeMimeType              : this.getProp(this.resizeMimeType,this.dropzoneOptions.resizeMimeType),
                 resizeQuality               : this.getProp(this.resizeQuality,this.dropzoneOptions.resizeQuality),
                 resizeMethod                : this.getProp(this.resizeMethod,this.dropzoneOptions.resizeMethod),
-                uploadMultiple              : this.getProp(this.uploadMultiple, this.dropzoneOptions.uploadMultiple)
+                uploadMultiple              : this.getProp(this.uploadMultiple, this.dropzoneOptions.uploadMultiple),
+                parallelUploads             : this.getProp(this.parallelUploads, this.dropzoneOptions.parallelUploads),
             })
 
             // Handle the dropzone events
@@ -419,6 +428,11 @@
                     color: white !important;
                     font-size: 5rem !important;
                 }
+            }
+
+            .dz-error-message {
+                top: calc(50% + 25px);
+                left: calc(50% - 35px);
             }
         }
     }
